@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const binanceService = require('../../../shared/services/binanceService');
-const tradingSessionService = require('../../../shared/services/tradingSessionService');
-const agentService = require('../../../shared/services/agentService');
-const agentLogService = require('../../../shared/services/agentLogService');
+const binanceService = require('../../shared/services/binanceService');
+const tradingSessionService = require('../../shared/services/tradingSessionService');
+const agentService = require('../../shared/services/agentService');
+const agentLogService = require('../../shared/services/agentLogService');
 
 router.post('/webhook/:ticker', async (req, res) => {
     const { ticker } = req.params;

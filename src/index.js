@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./shared/config/db');
 const prodRoutes = require('./prod');
-const testnetRoutes = require('./testnet/withai/routes');
+const testnetRoutes = require('./testnet/routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

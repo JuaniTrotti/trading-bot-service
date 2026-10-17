@@ -25,7 +25,7 @@ const tradeHistorySchema = new mongoose.Schema({
     },
     closedBy: {
         type: String,
-        enum: ['agent', 'sl', 'tp', 'manual'],
+        enum: ['agent', 'rejected', 'sl', 'tp', 'manual'],
         required: true
     },
     openedAt: {

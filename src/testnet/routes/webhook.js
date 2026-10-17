@@ -70,7 +70,8 @@ async function processWebhook(ticker, tradingViewData, receivedAt) {
             console.log(`[AGENT] Señal CONFIRMADA para ${symbol}`);
             await tradingSessionService.onBuyConfirmed(symbol, tradingViewData, agentResponse);
         } else {
-            console.log(`[AGENT] Señal RECHAZADA para ${symbol}. Ignorando.`);
+            console.log(`[AGENT] Señal RECHAZADA para ${symbol}. Registrando en historial...`);
+            await tradingExecutionService.registerRejectedBuy(symbol, tradingViewData, agentResponse);
         }
 
     } catch (error) {

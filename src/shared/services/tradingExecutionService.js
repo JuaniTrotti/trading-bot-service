@@ -149,6 +149,39 @@ const tradingExecutionService = {
     },
 
     /**
+     * Registra una compra rechazada en el historial
+     */
+    async registerRejectedBuy(symbol, signal, agentResponse) {
+        try {
+            const tradeHistory = new TradeHistory({
+                symbol,
+                entryPrice: signal.price,
+                exitPrice: signal.price,
+                pnlPct: 0,
+                side: 'buy',
+                closedBy: 'rejected',
+                openedAt: new Date(),
+                closedAt: new Date(),
+                buyTrace: agentResponse,
+                sellTrace: null
+            });
+
+            await tradeHistory.save();
+
+            console.log(`\n========== COMPRA RECHAZADA ==========`);
+            console.log(`Activo: ${symbol}`);
+            console.log(`Precio: ${signal.price}`);
+            console.log(`Score: ${agentResponse.score}`);
+            console.log(`====================================\n`);
+
+            return tradeHistory;
+        } catch (error) {
+            console.error(`[TradingExecution] Error al registrar compra rechazada:`, error);
+            throw error;
+        }
+    },
+
+    /**
      * Resume de operaciones cerradas
      */
     async getPerformanceSummary() {

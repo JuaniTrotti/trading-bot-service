@@ -43,12 +43,8 @@ async function processWebhook(ticker, tradingViewData, receivedAt) {
         // Payload para el agente (sin stop_loss ni take_profit)
         const { stop_loss, take_profit, ...tradingViewDataFiltered } = tradingViewData;
         const agentPayload = {
-            signal_event: 'BUY_SIGNAL',
-            symbol: symbol,
-            signal_price: tradingViewData.price,
             tradingview_data: tradingViewDataFiltered,
-            binance_context: binanceContext,
-            timestamp: receivedAt
+            binance_context: binanceContext
         };
 
         // Enviar al agente para confirmar señal
@@ -58,7 +54,7 @@ async function processWebhook(ticker, tradingViewData, receivedAt) {
 
         const agentResponse = await agentService.agentRequest('/v1/confirm-signal', agentPayload);
 
-        console.log(`[AGENT] Response: signal_confirmed=${agentResponse.signal_confirmed}, confirm_score=${agentResponse.confirm_score}`);
+        console.log(`[AGENT] Response: decision=${agentResponse.decision}, score=${agentResponse.score}`);
 
         // Loguear interacción
         await agentLogService.logInteraction({
@@ -66,11 +62,11 @@ async function processWebhook(ticker, tradingViewData, receivedAt) {
             symbol,
             requestPayload: agentPayload,
             responsePayload: agentResponse,
-            decision: agentResponse.signal_confirmed ? 'CONFIRMED' : 'REJECTED'
+            decision: agentResponse.decision ? 'CONFIRMED' : 'REJECTED'
         });
 
         // Solo si el agente confirma, procedemos con la compra
-        if (agentResponse.signal_confirmed) {
+        if (agentResponse.decision) {
             console.log(`[AGENT] Señal CONFIRMADA para ${symbol}`);
             await tradingSessionService.onBuyConfirmed(symbol, tradingViewData);
         } else {

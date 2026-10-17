@@ -31,6 +31,9 @@ app.listen(PORT, HOST, () => {
     console.log(`\n[PROD]`);
     console.log(`  GET  /prod/                       - Welcome JSON`);
     console.log(`\n[TESTNET]`);
-    console.log(`  POST /testnet/webhook/:ticker    - Receive TradingView webhook + Binance context`);
-    console.log(`  GET  /testnet/health             - Health check`);
+    console.log(`  POST /testnet/webhook/:ticker             - Receive TradingView webhook`);
+    console.log(`  GET  /testnet/positions/open            - Open positions (buys)`);
+    console.log(`  GET  /testnet/positions/closed         - Closed positions (sells)`);
+    console.log(`  GET  /testnet/positions/performance    - Performance summary`);
+    console.log(`  GET  /testnet/health                  - Health check`);
 });

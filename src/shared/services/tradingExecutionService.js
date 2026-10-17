@@ -94,6 +94,20 @@ const tradingExecutionService = {
     },
 
     /**
+     * Obtiene todas las posiciones abiertas
+     * @returns {Array}
+     */
+    async getOpenPositions() {
+        try {
+            return await Position.find({ status: 'open' })
+                .sort({ openedAt: -1 });
+        } catch (error) {
+            console.error(`[TradingExecution] Error al buscar posiciones abiertas:`, error);
+            throw error;
+        }
+    },
+
+    /**
      * Obtiene todas las posiciones cerradas
      * @param {number} limit - Cantidad de registros a devolver
      * @returns {Array}

@@ -57,12 +57,10 @@ async function checkSellSignal() {
 
         // Payload para enviar al agente
         const agentPayload = {
-            action: 'CHECK_SELL',
             symbol: currentSymbol,
             entry_price: lastBuySignal.price,
             current_price: binanceContext.order_book.best_ask,
-            binance_context: binanceContext,
-            timestamp: new Date().toISOString()
+            binance_context: binanceContext
         };
 
         console.log(`\n========== ENVIANDO AL AGENTE (CHECK_SELL) ==========`);
@@ -72,7 +70,7 @@ async function checkSellSignal() {
         // Llamar al endpoint del agente
         const agentResponse = await agentService.agentRequest('/v1/check-sell', agentPayload);
 
-        console.log(`[AGENT] should_exit=${agentResponse.should_exit}, pnl=${agentResponse.pnl_percent}%`);
+        console.log(`[AGENT] decision=${agentResponse.decision}, pnl=${agentResponse.pnl_percent}%`);
 
         // Loguear interacción
         await agentLogService.logInteraction({
@@ -80,14 +78,14 @@ async function checkSellSignal() {
             symbol: currentSymbol,
             requestPayload: agentPayload,
             responsePayload: agentResponse,
-            decision: agentResponse.should_exit ? 'EXIT' : 'HOLD'
+            decision: agentResponse.decision ? 'EXIT' : 'HOLD'
         });
 
-        if (agentResponse.should_exit) {
-            console.log(`[AGENT] DICE VENDER - score: ${agentResponse.should_exit_score}`);
+        if (agentResponse.decision) {
+            console.log(`[AGENT] DICE VENDER - score: ${agentResponse.score}`);
             await executeSell(binanceContext.order_book.best_ask, 'agent_exit_check');
         } else {
-            console.log(`[AGENT] MANTENER - score: ${agentResponse.should_exit_score}`);
+            console.log(`[AGENT] MANTENER - score: ${agentResponse.score}`);
         }
 
     } catch (error) {

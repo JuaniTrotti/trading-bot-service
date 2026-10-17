@@ -68,7 +68,7 @@ async function processWebhook(ticker, tradingViewData, receivedAt) {
         // Solo si el agente confirma, procedemos con la compra
         if (agentResponse.decision) {
             console.log(`[AGENT] Señal CONFIRMADA para ${symbol}`);
-            await tradingSessionService.onBuyConfirmed(symbol, tradingViewData);
+            await tradingSessionService.onBuyConfirmed(symbol, tradingViewData, agentResponse);
         } else {
             console.log(`[AGENT] Señal RECHAZADA para ${symbol}. Ignorando.`);
         }

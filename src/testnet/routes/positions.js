@@ -51,4 +51,19 @@ router.get('/performance', async (req, res) => {
     }
 });
 
+// GET /testnet/positions/history - Historial completo con traces de compra y venta
+router.get('/history', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const history = await tradingExecutionService.getTradeHistory(limit);
+        res.json({
+            success: true,
+            count: history.length,
+            trades: history
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 module.exports = router;

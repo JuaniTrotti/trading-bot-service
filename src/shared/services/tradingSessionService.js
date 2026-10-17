@@ -5,19 +5,21 @@ const agentLogService = require('./agentLogService');
 
 const TradingState = {
     IDLE: 'IDLE',
-    MONITORING: 'MONITORING',  // Esperando confirmación de compra
-    SELL_PENDING: 'SELL_PENDING'  // Buy confirmada, esperando señal de venta
+    MONITORING: 'MONITORING',
+    SELL_PENDING: 'SELL_PENDING'
 };
 
 let currentState = TradingState.IDLE;
 let currentSymbol = null;
 let pollInterval = null;
 let lastBuySignal = null;
+let buyTrace = null;
+let lastSellTrace = null;
 
 /**
  * Inicia el ciclo de monitoreo después de que el agente confirma la compra
  */
-async function onBuyConfirmed(symbol, buySignal) {
+async function onBuyConfirmed(symbol, buySignal, buyResponse) {
     if (currentState !== TradingState.IDLE) {
         console.log(`[TradingSession] Ya hay una operación en curso (${currentState}). Ignorando BUY para ${symbol}`);
         return;
@@ -25,6 +27,8 @@ async function onBuyConfirmed(symbol, buySignal) {
 
     currentSymbol = symbol;
     lastBuySignal = buySignal;
+    buyTrace = buyResponse; // Guardar trace completo de la compra
+    lastSellTrace = null;
     currentState = TradingState.SELL_PENDING;
 
     // Registrar compra en MongoDB
@@ -35,7 +39,7 @@ async function onBuyConfirmed(symbol, buySignal) {
 }
 
 /**
- * polling para preguntar al agente si debemos vender
+ * Polling para preguntar al agente si debemos vender
  */
 async function startSellPolling() {
     if (pollInterval) {
@@ -44,7 +48,6 @@ async function startSellPolling() {
 
     console.log(`[TradingSession] Iniciando monitoreo en 40s para ${currentSymbol}`);
 
-    // Primer polling en 40 segundos (no inmediatamente)
     pollInterval = setInterval(async () => {
         await checkSellSignal();
     }, 40000);
@@ -83,6 +86,7 @@ async function checkSellSignal() {
 
         if (agentResponse.decision) {
             console.log(`[AGENT] DICE VENDER - score: ${agentResponse.score}`);
+            lastSellTrace = agentResponse;
             await executeSell(binanceContext.order_book.best_ask, 'agent_exit_check');
         } else {
             console.log(`[AGENT] MANTENER - score: ${agentResponse.score}`);
@@ -104,13 +108,13 @@ function stopMonitoring() {
     currentState = TradingState.IDLE;
     currentSymbol = null;
     lastBuySignal = null;
+    buyTrace = null;
+    lastSellTrace = null;
     console.log(`[TradingSession] Monitoreo detenido.`);
 }
 
 /**
  * Ejecuta la venta y vuelve a estado IDLE
- * @param {number} exitPrice - Precio de salida
- * @param {string} closedReason - Razón del cierre
  */
 async function executeSell(exitPrice, closedReason) {
     if (currentState !== TradingState.SELL_PENDING) {
@@ -129,13 +133,22 @@ async function executeSell(exitPrice, closedReason) {
     console.log(`Precio salida: ${exitPrice}`);
     console.log(`====================================\n`);
 
-    // Registrar venta en MongoDB
-    await tradingExecutionService.executeSell(currentSymbol, exitPrice, 'agent', closedReason);
+    // Registrar venta en MongoDB con los traces completos
+    await tradingExecutionService.executeSell(
+        currentSymbol,
+        exitPrice,
+        'agent',
+        closedReason,
+        buyTrace,
+        lastSellTrace
+    );
 
     // Resetear estado
     currentState = TradingState.IDLE;
     currentSymbol = null;
     lastBuySignal = null;
+    buyTrace = null;
+    lastSellTrace = null;
 
     console.log(`[TradingSession] Venta completada. Esperando próximo BUY_SIGNAL...`);
 }

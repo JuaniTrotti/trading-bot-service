@@ -1,12 +1,10 @@
 const Position = require('../../models/Position');
+const TradeHistory = require('../../models/TradeHistory');
 
 const tradingExecutionService = {
 
     /**
      * Registra una compra abierta
-     * @param {string} symbol - Símbolo del activo (ej. "SOLUSDT")
-     * @param {Object} signal - Signal de TradingView con price, stop_loss, take_profit
-     * @returns {Object} Posición creada
      */
     async executeBuy(symbol, signal) {
         try {
@@ -36,13 +34,14 @@ const tradingExecutionService = {
 
     /**
      * Registra una venta y cierra la posición
-     * @param {string} symbol - Símbolo del activo
-     * @param {number} exitPrice - Precio de salida
-     * @param {string} closedBy - Motivo del cierre ('tp', 'sl', 'manual', 'jev')
-     * @param {string} closedReason - Descripción del cierre
-     * @returns {Object} Posición actualizada
+     * @param {string} symbol
+     * @param {number} exitPrice
+     * @param {string} closedBy
+     * @param {string} closedReason
+     * @param {Object} buyTrace - Trace completo del BUY_SIGNAL confirmado
+     * @param {Object} sellTrace - Trace completo del CHECK_SELL
      */
-    async executeSell(symbol, exitPrice, closedBy = 'jev', closedReason = '') {
+    async executeSell(symbol, exitPrice, closedBy = 'agent', closedReason = '', buyTrace = null, sellTrace = null) {
         try {
             const position = await Position.findOne({ ticker: symbol, status: 'open' });
 
@@ -54,6 +53,8 @@ const tradingExecutionService = {
             // Calcular PnL
             const pnlPct = ((exitPrice - position.entryPrice) / position.entryPrice) * 100;
 
+            const openedAt = position.openedAt;
+
             position.exitPrice = exitPrice;
             position.pnlPct = pnlPct;
             position.status = 'closed';
@@ -63,13 +64,28 @@ const tradingExecutionService = {
 
             await position.save();
 
+            // Crear TradeHistory con traces completos
+            const tradeHistory = new TradeHistory({
+                symbol,
+                entryPrice: position.entryPrice,
+                exitPrice,
+                pnlPct,
+                side: 'buy',
+                closedBy,
+                openedAt,
+                closedAt: new Date(),
+                buyTrace,
+                sellTrace
+            });
+
+            await tradeHistory.save();
+
             console.log(`\n========== VENTA REGISTRADA ==========`);
             console.log(`Activo: ${symbol}`);
             console.log(`Precio entrada: ${position.entryPrice}`);
             console.log(`Precio salida: ${exitPrice}`);
             console.log(`PnL: ${pnlPct.toFixed(2)}%`);
-            console.log(`Cerrado por: ${closedBy} (${closedReason})`);
-            console.log(`Position ID: ${position._id}`);
+            console.log(`Cerrado por: ${closedBy}`);
             console.log(`======================================\n`);
 
             return position;
@@ -81,8 +97,6 @@ const tradingExecutionService = {
 
     /**
      * Obtiene la posición abierta para un símbolo
-     * @param {string} symbol
-     * @returns {Object|null}
      */
     async getOpenPosition(symbol) {
         try {
@@ -95,7 +109,6 @@ const tradingExecutionService = {
 
     /**
      * Obtiene todas las posiciones abiertas
-     * @returns {Array}
      */
     async getOpenPositions() {
         try {
@@ -109,8 +122,6 @@ const tradingExecutionService = {
 
     /**
      * Obtiene todas las posiciones cerradas
-     * @param {number} limit - Cantidad de registros a devolver
-     * @returns {Array}
      */
     async getClosedPositions(limit = 20) {
         try {
@@ -124,8 +135,21 @@ const tradingExecutionService = {
     },
 
     /**
+     * Obtiene el historial de operaciones completas con traces
+     */
+    async getTradeHistory(limit = 50) {
+        try {
+            return await TradeHistory.find()
+                .sort({ closedAt: -1 })
+                .limit(limit);
+        } catch (error) {
+            console.error(`[TradingExecution] Error al buscar historial:`, error);
+            throw error;
+        }
+    },
+
+    /**
      * Resume de operaciones cerradas
-     * @returns {Object} Resumen con total de operaciones, wins, losses, win rate, avg PnL
      */
     async getPerformanceSummary() {
         try {

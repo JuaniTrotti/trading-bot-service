@@ -37,15 +37,15 @@ Este proyecto implementa un **sistema de confirmación en 3 capas** para trading
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   TradingView   │────▶│  Trading Bot API │────▶│  Agente IA      │
-│   (Webhooks)   │     │  (Logger)        │     │  (Validación)   │
+│   TradingView   │────▶│  Trading Bot API │────▶│    Agente IA    │
+│   (Webhooks)    │     │     (Logger)     │     │   (Validación)  │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
-                               │
-                               ▼
-                        ┌──────────────────┐
-                        │  Binance Futures │
-                        │  (Ejecución)     │
-                        └──────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────────┐
+                    │   Binance Futures    │
+                    │    (Ejecución)       │
+                    └──────────────────────┘
 ```
 
 1. **Capa 1 - TradingView**: Envía webhooks con señales de compra/venta
@@ -69,39 +69,39 @@ Este proyecto implementa un **sistema de confirmación en 3 capas** para trading
 ```
                               ┌─────────────────────────────────────┐
                               │          TRADING BOT API            │
-                              │              (Logger)                │
+                              │             (Logger)                │
                               │                                     │
-┌─────────────┐               │  ┌─────────────┐  ┌─────────────┐  │
-│ TradingView │──────────────▶│  │   Webhook   │  │  Positions  │  │
-│ (Webhooks)  │               │  │   Handler   │  │   Routes    │  │
-└─────────────┘               │  └──────┬──────┘  └──────┬──────┘  │
-                              │         │                │         │
-                              │  ┌──────▼────────────────▼──────┐  │
+┌─────────────┐               │  ┌─────────────┐  ┌─────────────┐   │
+│ TradingView │──────────────▶│  │   Webhook   │ │  Positions  │    │
+│ (Webhooks)  │               │  │   Handler   │  │   Routes    │   │
+└─────────────┘               │  └──────┬──────┘  └──────┬──────┘   │
+                              │         │                │          │
+                              │  ┌──────▼────────────────▼──────┐   │
                               │  │       Services Layer          │  │
                               │  │                               │  │
                               │  │  ┌─────────────────────────┐  │  │
-                              │  │  │   binanceService        │  │  │
-                              │  │  │   (contexto de mercado) │  │  │
+                              │  │  │    binanceService       │  │  │
+                              │  │  │  (contexto de mercado)  │  │  │
                               │  │  └─────────────────────────┘  │  │
                               │  │  ┌─────────────────────────┐  │  │
-                              │  │  │   agentService          │  │  │
+                              │  │  │      agentService       │  │  │
                               │  │  │   (llamadas al agente)  │  │  │
                               │  │  └─────────────────────────┘  │  │
                               │  │  ┌─────────────────────────┐  │  │
-                              │  │  │ tradingSessionService   │  │  │
-                              │  │  │ (control de estado)    │  │  │
+                              │  │  │  tradingSessionService  │  │  │
+                              │  │  │    (control de estado)  │  │  │
                               │  │  └─────────────────────────┘  │  │
                               │  │  ┌─────────────────────────┐  │  │
-                              │  │  │ tradingExecutionService │  │  │
-                              │  │  │ (persistencia)          │  │  │
+                              │  │  │tradingExecutionService  │  │  │
+                              │  │  │    (persistencia)       │  │  │
                               │  │  └─────────────────────────┘  │  │
                               │  └───────────────────────────────┘  │
                               └─────────────────────────────────────┘
                                         │              │
                                         ▼              ▼
                               ┌─────────────┐  ┌─────────────────────┐
-                              │   MongoDB   │  │   Agente IA        │
-                              │  (datos)    │  │   (validación)     │
+                              │   MongoDB   │  │      Agente IA      │
+                              │   (datos)   │  │    (validación)     │
                               └─────────────┘  └─────────────────────┘
 ```
 
@@ -264,78 +264,78 @@ Log de cada interacción con el agente IA.
 ### Flujo de Compra (BUY_SIGNAL)
 
 ```
-1. TradingView detecta señal de compra
-   │
-   ▼
-2. TradingView envía POST /testnet/webhook/:ticker
-   Payload: { price, stop_loss, take_profit, ... }
-   │
-   ▼
-3. API responde 200 OK inmediatamente
-   (procesa en background con setImmediate)
-   │
-   ▼
-4. API limpia el ticker (ej: "BINANCE:BTCUSDT.P" → "BTCUSDT")
-   │
-   ▼
-5. API consulta Binance para obtener contexto de mercado
-   - Precio actual
-   - Order flow (delta de volumen)
-   - Open Interest
-   - Long/Short ratio
-   - Order book depth
-   - Funding rate
-   - Contexto de BTC
-   │
-   ▼
-6. API arma payload combinado y envía al Agente IA
-   /v1/confirm-signal
-   Payload: { tradingview_data, binance_context }
-   │
-   ▼
-7. Agente IA responde con decisión:
-   - decision: true/false
-   - score: confianza (0-100)
-   - reasoning: explicación de la decisión
-   │
-   ▼
-8. Si CONFIRMADO (decision: true):
-   ├─ Se registra compra en MongoDB (Position)
-   ├─ Se inicia polling cada 40s para checks de venta
-   └─ Se loguea en AgentLog como CONFIRMED
-   │
-   ▼
-9. Si RECHAZADO (decision: false):
-   ├─ Se registra en TradeHistory como "rejected"
-   └─ Se loguea en AgentLog como REJECTED
+ 1. TradingView detecta señal de compra
+    │
+    ▼
+ 2. TradingView envía POST /testnet/webhook/:ticker
+    Payload: { price, stop_loss, take_profit, ... }
+    │
+    ▼
+ 3. API responde 200 OK inmediatamente
+    (procesa en background con setImmediate)
+    │
+    ▼
+ 4. API limpia el ticker (ej: "BINANCE:BTCUSDT.P" → "BTCUSDT")
+    │
+    ▼
+ 5. API consulta Binance para obtener contexto de mercado
+    - Precio actual
+    - Order flow (delta de volumen)
+    - Open Interest
+    - Long/Short ratio
+    - Order book depth
+    - Funding rate
+    - Contexto de BTC
+    │
+    ▼
+ 6. API arma payload combinado y envía al Agente IA
+    /v1/confirm-signal
+    Payload: { tradingview_data, binance_context }
+    │
+    ▼
+ 7. Agente IA responde con decisión:
+    - decision: true/false
+    - score: confianza (0-100)
+    - reasoning: explicación de la decisión
+    │
+    ▼
+ 8. Si CONFIRMADO (decision: true):
+    ├─ Se registra compra en MongoDB (Position)
+    ├─ Se inicia polling cada 40s para checks de venta
+    └─ Se loguea en AgentLog como CONFIRMED
+    │
+    ▼
+ 9. Si RECHAZADO (decision: false):
+    ├─ Se registra en TradeHistory como "rejected"
+    └─ Se loguea en AgentLog como REJECTED
 ```
 
 ### Flujo de Venta (CHECK_SELL - Polling)
 
 ```
-1. Cada 40 segundos, API consulta contexto de Binance
-   │
-   ▼
-2. API envía al Agente IA:
-   /v1/check-sell
-   Payload: { symbol, entry_price, current_price, binance_context }
-   │
-   ▼
-3. Agente IA responde:
-   - decision: true (EXIT) / false (HOLD)
-   - pnl_percent: PnL actual estimado
-   - score: confianza
-   │
-   ▼
-4. Si decision: true (EXIT):
-   ├─ Se registra venta en MongoDB
-   ├─ Se cierra Position
-   ├─ Se crea TradeHistory con buyTrace + sellTrace
-   └─ Se detiene polling
-   │
-   ▼
-5. Si decision: false (HOLD):
-   └─ Se espera siguiente polling (40s)
+ 1. Cada 40 segundos, API consulta contexto de Binance
+    │
+    ▼
+ 2. API envía al Agente IA:
+    /v1/check-sell
+    Payload: { symbol, entry_price, current_price, binance_context }
+    │
+    ▼
+ 3. Agente IA responde:
+    - decision: true (EXIT) / false (HOLD)
+    - pnl_percent: PnL actual estimado
+    - score: confianza
+    │
+    ▼
+ 4. Si decision: true (EXIT):
+    ├─ Se registra venta en MongoDB
+    ├─ Se cierra Position
+    ├─ Se crea TradeHistory con buyTrace + sellTrace
+    └─ Se detiene polling
+    │
+    ▼
+ 5. Si decision: false (HOLD):
+    └─ Se espera siguiente polling (40s)
 ```
 
 ---
@@ -594,29 +594,7 @@ Health check del servicio.
 
 ## ⚙️ Configuración
 
-### Variables de Entorno
-
-Crea un archivo `.env` basado en `env.example`:
-
-```bash
-# Puerto y host del servidor
-PORT=3000
-HOST=0.0.0.0
-
-# URI de MongoDB
-MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/
-
-# Entorno
-NODE_ENV=development
-
-# URL del Agente IA
-AGENT_API_URL=http://localhost:8000
-
-# Secret para autenticación con el Agente IA
-AGENT_API_SECRET=tu_api_secret_key
-```
-
-### env.example
+### Variables de Entorno env.example
 
 ```bash
 PORT=3000
@@ -676,18 +654,9 @@ curl http://localhost:3000/testnet/health
 
 ### Medidas implementadas
 
-1. **Variables de entorno para secrets**: `.env` no se committea
 2. **Autenticación con Agente IA**: Bearer token en headers
 3. **CORS habilitado**: Para permitir requests de orígenes confiables
 4. **No exposición de credenciales**: En responses de API
-
-### Recomendaciones
-
-- [ ] Implementar autenticación en endpoints (JWT/API Key)
-- [ ] Validación de payloads de TradingView
-- [ ] Rate limiting en endpoints
-- [ ] HTTPS en producción
-- [ ] Webhook signature verification (TradingView)
 
 ---
 
@@ -710,44 +679,44 @@ curl http://localhost:3000/testnet/health
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              TRADING BOT API                                 │
+│                              TRADING BOT API                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│   TRADINGVIEW                          AGENTE IA                             │
-│   ──────────                           ─────────                             │
-│   Webhook ──────────────────────────▶  /v1/confirm-signal                   │
-│   Alert                                  │                                    │
-│   with                                   ▼                                    │
-│   price,                              ┌─────────┐                             │
-│   stop_loss,        Context Data ◀───▶│ binance │                            │
-│   take_profit                         │Service  │                            │
-│                                      └────┬────┘                             │
-│                                           │                                   │
-│   BUY_SIGNAL ◀───────────────────────────┘                                   │
-│   decision=                                           /v1/check-sell        │
-│   CONFIRM/                                           ◀──────────────────────│
-│   REJECT                                             40s polling            │
-│        │                                                                  │
-│        │ confirmed                   ┌──────────────────────┐              │
-│        ▼                             │ tradingSession      │              │
-│   ┌─────────┐                        │ Service             │              │
-│   │Position │                        │                     │              │
-│   │Created  │                        │ IDLE ────▶ MONITOR  │              │
-│   └────┬────┘                        │           │         │              │
-│        │                             │           ▼         │              │
-│        │ 40s polling                  │       SELL_PENDING  │              │
-│        ├────────────────────────────▶│           │         │              │
-│        │                             └───────────┼─────────┘              │
-│        │                                       │                            │
-│        │ decision=EXIT                         │ executeSell               │
-│        │ ◀──────────────────────────────────────┘                            │
-│        │                                                                  │
-│        ▼                                                                  │
-│   ┌──────────┐     ┌────────────────┐                                      │
-│   │ Position │     │  TradeHistory  │                                      │
-│   │ Closed   │────▶│  (with traces) │                                      │
-│   └──────────┘     └────────────────┘                                      │
-│                                                                              │
+│                                                                             │
+│  TRADINGVIEW                                  AGENTE IA                     │
+│  ──────────                                   ─────────                     │
+│  Webhook ──────────────────────────────────▶  /v1/confirm-signal           │
+│  Alert                                           │                          │
+│  with                                            ▼                          │
+│  price,                                      ┌─────────┐                    │
+│  stop_loss,         Context Data ◀─────────▶│ binance │                    │
+│  take_profit                                  │ Service │                   │
+│                                              └────┬────┘                    │
+│                                                   │                         │
+│  BUY_SIGNAL ◀────────────────────────────────────┘                         │
+│  decision=                                         /v1/check-sell           │
+│  CONFIRM/                                         ◀────────────────────────│
+│  REJECT                                            40s polling              │
+│       │                                                                     │
+│       │ confirmed                    ┌──────────────────────┐               │
+│       ▼                              │ tradingSession      │                │
+│  ┌─────────┐                         │ Service             │                │
+│  │Position │                         │                     │                │
+│  │Created  │                         │ IDLE ─────▶ MONITOR │                │
+│  └────┬────┘                         │           │        │                 │
+│       │                              │           ▼        │                 │
+│       │ 40s polling                   │    SELL_PENDING   │                 │
+│       ├─────────────────────────────▶│           │        │                 │
+│       │                              └───────────┼────────┘                 │
+│       │                                          │                          │
+│       │ decision=EXIT                            │ executeSell              │
+│       │ ◀────────────────────────────────────────┘                          │
+│       │                                                                     │
+│       ▼                                                                     │
+│  ┌──────────┐       ┌────────────────┐                                      │
+│  │ Position │       │  TradeHistory  │                                      │
+│  │ Closed   │─────▶│  (with traces) │                                       │
+│  └──────────┘       └────────────────┘                                      │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

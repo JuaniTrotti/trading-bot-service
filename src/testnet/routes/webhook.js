@@ -33,14 +33,14 @@ router.get('/health', (req, res) => {
 
 async function processWebhook(ticker, tradingViewData, receivedAt) {
     try {
-        // Extraer símbolo limpio (ej. "BINANCE:BTCUSDT" -> "BTCUSDT")
+        // Extraer símbolo limpio 
         const symbol = ticker.replace('BINANCE:', '').replace('.P', '');
 
         // Obtener contexto de Binance
         console.log(`[${receivedAt}] Fetching Binance context for ${symbol}...`);
         const binanceContext = await binanceService.getBinanceContextData(symbol);
 
-        // Payload para el agente (sin stop_loss ni take_profit)
+        // Payload para el agente
         const { stop_loss, take_profit, ...tradingViewDataFiltered } = tradingViewData;
         const agentPayload = {
             tradingview_data: tradingViewDataFiltered,
